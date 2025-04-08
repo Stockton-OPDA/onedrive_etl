@@ -4,6 +4,7 @@ from etl.load import load_data
 import logging
 from helpers.sql_helpers import connect_db
 from config.config import load_config
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 cfg = load_config()
@@ -27,11 +28,14 @@ def run_etl(filename, filepath):
         filepath (str): The path to the file being processed.
     """
     try:
+        file_path = Path(filepath)
+        department = file_path.parent.name
+
         engine = connect_db(DRIVER, SQL_SERVER, DATABASE, USERNAME, PASSWORD)
         df = extract_data(filepath)
         if not df.empty:
             tablename, transformed_df = transform_data(filename, df)
-            load_data(transformed_df, tablename, engine)
+            load_data(transformed_df, tablename, engine, department)
 
     except Exception as e:
         logger.error(f'Error in running {filename} in run_etl.py: {e}', exc_info=True)

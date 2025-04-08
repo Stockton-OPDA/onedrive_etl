@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 cfg = load_config()
 
 QUEUE_NAME = 'file_events'
-ONEDRIVE_PATH = cfg.ONEDRIVE_PATH
+ONEDRIVE_PATH = cfg.ONEDRIVE.PATH
+ONEDRIVE_SUBFOLDERS = cfg.ONEDRIVE.SUBFOLDERS
 SQL_SERVER = cfg.creds.SQL_SERVER
 DATABASE = cfg.creds.DATABASE
 USERNAME = cfg.creds.USERNAME_SQL
@@ -64,7 +65,6 @@ class Publisher(FileSystemEventHandler):
                     delivery_mode=2  # Make the message persistent
                 )
             )
-            print(f"File: {filename} {event_type}, JSON message sent to queue.")
             logger.info(f'File: {filename} {event_type}, JSON message sent to queue.')
             self.last_message_sent[filepath] = current_time
 
@@ -95,33 +95,32 @@ def run_producer():
     sent to a RabbitMQ queue.
     """
     try:
-        print("Starting the producer...")
         logger.info("Starting the producer...")
 
         # Create observer and event handler
         observer = Observer()
         publisher = Publisher()
-        observer.schedule(publisher, ONEDRIVE_PATH, recursive=False)
-        observer.start()
 
-        print(f"Monitoring started in {ONEDRIVE_PATH} for file changes...")
-        logger.info(f"Monitoring started in {ONEDRIVE_PATH} for file changes...")
+        # Monitor each subfolder
+        for subfolder in ONEDRIVE_SUBFOLDERS:
+            subfolder_path = os.path.join(ONEDRIVE_PATH, subfolder)
+            observer.schedule(publisher, subfolder_path, recursive=False)
+            logger.info(f"Monitoring started in {subfolder_path} for file changes...")
+            
+        observer.start()
 
         while True:
             time.sleep(5) # Keep process alive to detect file changes
 
     except KeyboardInterrupt:
         observer.stop()
-        print("Monitoring stopped.")
         logger.info("Monitoring stopped.")
         publisher.channel.close()
         publisher.connection.close()
     except pika.exceptions.AMQPConnectionError as e:
-        print(f"Producer connection error: {e}, retrying...")
         logger.warning(f"Producer connection error: {e}, retrying...")
         time.sleep(5)  # Retry after delay
     except Exception as e:
-        print(f"Producer error: {e}, retrying...")
         logger.error(f"Producer error: {e}, retrying...")
         time.sleep(5)
 
