@@ -1,6 +1,6 @@
 .env
+__pycache__/
+backups/
 .venv
-config/config.yaml
-__pycache__
 logs
-reports
+config/config.yaml

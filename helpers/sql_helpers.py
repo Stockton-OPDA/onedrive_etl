@@ -3,6 +3,8 @@ import sqlalchemy
 import logging
 import urllib
 from sqlalchemy.engine.base import Engine
+from sqlalchemy import Integer, String, Float, DateTime
+from sqlalchemy.types import Integer, String, Float, DateTime
 
 logger = logging.getLogger(__name__)
 
@@ -55,31 +57,64 @@ def connect_db(DRIVER: str, SERVER: str, DATABASE: str, USERNAME: str, PASSWORD:
     except Exception as e:
         logger.error("An unexpected error occurred: %s", e)
         raise ConnectionError(f"An unexpected error occurred: {e}")
-    
-def fetch_sql_data(engine: Engine, query: str) -> pd.DataFrame:
+
+def infer_sql_dtype(column_name: str, dtype: str):
     """
-    Fetches data from a SQL Server database using a provided query and returns it as a Pandas DataFrame.
+    Infers the SQLAlchemy type based on the column name and Pandas dtype.
 
     Args:
-        xx
+        column_name (str): The name of the column.
+        dtype (str): The Pandas dtype of the column.
 
     Returns:
-        xx
+        sqlalchemy.types.TypeDecorator: The inferred SQLAlchemy type.
+    """
+    if "date" in column_name.lower():
+        return DateTime()
+    elif dtype == 'int64':
+        return Integer()
+    elif dtype == 'float64':
+        return Float()
+    else:
+        return String()
+
+def upload_dataframe_to_sql(df: pd.DataFrame, table_name: str, engine: Engine, schema: str) -> None:
+    """
+    Uploads a DataFrame to a SQL database table. If the table already exists, it is dropped and re-created with the DataFrame data.
+
+    Args:
+        df (pandas.DataFrame): The DataFrame to be uploaded.
+        table_name (str): The name of the table in the SQL database.
+        engine (sqlalchemy.engine.base.Engine): The SQLAlchemy engine connected to the database.
+        schema (str): The name of the schema in the SQL database.
 
     Raises:
-        xx
+        Exception: Errors in uploading the DataFrame to the SQL database.
+
+    Returns:
+        None
+
+    Notes:
+        - If the table already exists, it is dropped before creating a new table with the DataFrame data.
     """
+    if df.empty:
+        logger.warning(f"The DataFrame for table {table_name} is empty. Skipping upload.")
+        return
     try:
         with engine.connect() as conn:
             trans = conn.begin()
             try:
-                df = pd.read_sql(query, conn)
-                trans.commit()  # No actual commit needed for SELECT, but this ensures the transaction is completed cleanly
-                return df
+                # # Generate the dtype mapping dynamically based on DataFrame columns
+                # dtype_mapping = {col: infer_sql_dtype(col, str(df[col].dtype)) for col in df.columns}
+
+                # Write the DataFrame to the SQL database table, replace the existing table if it exists
+                df.to_sql(table_name, conn, if_exists='replace', index=False, schema=schema)
+                logger.info(f"Table {schema}.{table_name} created and data uploaded.")
+                trans.commit()
             except Exception as proc_error:
                 trans.rollback()
                 logger.error(f"An error occurred during transaction: {proc_error}")
                 raise
+
     except Exception as e:
-        logger.error(f"An error occurred while connecting to the database: {e}")
-        raise
+        logger.error(f'Error in upload_dataframe_to_sql with {schema}.{table_name}: {e}')

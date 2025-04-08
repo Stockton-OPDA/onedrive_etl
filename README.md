@@ -1,82 +1,120 @@
-# Azure Data Pipeline
+# RabbitMQ Producer and Consumer Service
 
-## Overview
-This project uploads Community Development (CDD), Fire, Public Works (PW), and Police Department (PD) tables to Azure Data Lake Storage (ADLS).
+This project automates FireSTAT data pushing to the OPDA on-premise SQL server for use in PowerBI / STAT. 
 
-## Project Structure
-```
-project_root/
-│── config/
-│   │── config.py              # Configuration loader
-│   │── config_logging.py      # Logging setup
-│   │── config.yaml            # Credentials
-│── helpers/
-│   │── sql_helpers.py         # Database connection and query execution
-│   │── az_helpers.py          # Azure Data Lake upload utilities
-│── main.py                    # Main execution script
-│── README.md                  # Project documentation
-```
+This project uses a RabbitMQ-based messaging system consisting of a producer and a consumer. The producer monitors file creation or modification events in a specified directory, while the consumer processes the messages sent to the RabbitMQ queue.
 
-## Dependencies
-Install the dependencies from requirements.txt.
+## Features
+
+- **Producer**:
+  - Monitors a directory for file changes using the `watchdog` library.
+  - Sends JSON messages to a RabbitMQ queue upon detecting file events.
+  - Handles RabbitMQ connection errors with a retry mechanism for recovery.
+
+- **Consumer**:
+  - Consumes messages from the RabbitMQ queue.
+  - Processes the messages based on your custom business logic.
+  - Includes connection recovery to handle network or RabbitMQ failures.
+
+- **Resilience**:
+  - Automatic reconnection and retry mechanism for both producer and consumer.
+  - Graceful handling of shutdown signals (e.g., `KeyboardInterrupt`).
+
+## Installation
+
+1. **Clone the repository:**
+
+   ```
+   git clone https://github.com/your-repo/rabbitmq-service.git
+   cd rabbitmq-service
+   ```
+
+2. **Set up a virtual environment:**
+
+   ```
+   python -m venv venv
+   source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+   ```
+
+3. **Install dependencies:**
+
+   ```
+   pip install -r requirements.txt
+   ```
+
+4. **Configure RabbitMQ credentials:**
+   
+   Update the `config.yaml` file in the `config` folder with your RabbitMQ server details.
 
 ## Configuration
-- Credentials and configurations are stored in config.yaml (you must add this file).
-- Logging is set up using config_logging.py.
 
-## Execution
-Run the pipeline by executing:
-```bash
-py -m main
-```
+### RabbitMQ Settings
 
-## Functionality
-1. **Database Connection**
-   - Connects to City of Stockton's OPDA, PD, and Fire databases.
-   - Uses SQLAlchemy for database connections.
+Update the following settings in `config/config.yaml`:
 
-2. **Data Extraction**
-   - Fetches data from predefined tables in different departments.
-   - Queries are dynamically generated for table selection.
+- `rabbitmq_host`: The hostname of the RabbitMQ server.
+- `rabbitmq_port`: The port number for RabbitMQ (default: 5672).
+- `rabbitmq_user`: The username for RabbitMQ authentication.
+- `rabbitmq_password`: The password for RabbitMQ authentication.
+- `rabbitmq_queue`: The queue name used for messaging.
 
-3. **Data Upload to Azure**
-   - Converts extracted data to Parquet format.
-   - Uploads the data to development and production ADLS containers.
+### Directory Monitoring
 
-## Table Mappings
-### Community Development (CDD)
-- accela_permit_cycles_prod
-- accela_resubmittal_cycles_prod
-- accela_tasks_prod
-- accela_department_cycles_prod
+Specify the directory to monitor for file changes in the `ONEDRIVE_PATH` constant in `messaging/producer.py`.
 
-### Fire Department
-- EventList  
-- Deep_Dive_TOT  
-- 2024_Loss  
-- 2023_Non_Homeless_Related  
-- 2024_Non_Homeless_Related  
-- 2023-2024_Homelessness  
-- 2023_False_Alarms  
-- 2023_Loss  
-- 2023_Responses  
-- 2024_False_Alarms  
-- BATS-YTD  
-- 2023-2024_OT  
-- 2024_Responses  
-- 2024_OT_Rank  
-- BATS-Incidents  
-- BATS-Activities  
+## Usage
 
-### Public Works (PW)
-- WORKORDER
+### Start the Producer and Consumer
 
-### Police Department (PD)
-- STAT_CEASEFIRE
-- STAT_CFS
-- STAT_CFS_HOMELESS
-- STAT_CITATIONS
-- STAT_COLLISION
-- STAT_CRIME
-- STAT_FIREARM
-- STAT_SERVTIME_HOMELESS
+Run the batch file `run.bat`.
+
+NOTE: Ensure that you do NOT click into the command prompt window. This will cause the application to freeze and will block the application from operating as normal. You will know the application is frozen if the command prompt window shows "Select" in front of the window title. 
+
+Run the following commands to start the producer and consumer processes:
+   ```
+   python main.py
+   ```
+
+This will:
+
+- Start the producer process to monitor the specified directory.
+- Start the consumer process to listen for and process messages from RabbitMQ.
+
+### Stopping the Services
+
+Press `Ctrl+C` to gracefully stop both the producer and consumer processes.
+
+## Code Structure
+
+- **main.py**:
+  - Entry point for the application. Starts both producer and consumer processes using `multiprocessing`.
+
+- **messaging/producer.py**:
+  - Implements the producer logic, including directory monitoring and message publishing.
+
+- **messaging/consumer.py**:
+  - Implements the consumer logic, including message consumption and processing.
+
+- **messaging/rabbitmq_connector.py**:
+  - Contains the `connect_to_broker` function for creating RabbitMQ connections and channels.
+
+- **config/config.py**:
+  - Provides functions to load application configuration from `config.yaml`.
+
+- **config/config_logging.py**:
+  - Sets up application-wide logging.
+
+## Error Handling and Recovery
+
+- Both producer and consumer processes use a retry mechanism to recover from RabbitMQ connection errors.
+- If a connection is lost, the application retries with a delay and uses an exponential backoff strategy to avoid rapid reconnection attempts.
+- Graceful shutdown ensures proper resource cleanup (e.g., closing RabbitMQ channels and connections).
+
+## Requirements
+
+- Python 3.8+
+- RabbitMQ server
+
+## Logging
+
+Logs are stored in the `/logs` directory as specified in the `config.yaml` file. The logging configuration can be customized in `config/config_logging.py`.
