@@ -11,6 +11,7 @@ Currently, the following departments are monitored:
   - HR
   - PD
   - PW
+  - OVP
 
 ## Features
 
@@ -66,7 +67,7 @@ Currently, the following departments are monitored:
      password: '<RABBITMQ_PASSWORD>'
    ONEDRIVE:
      PATH: '<ONEDRIVE_PATH>'
-     SUBFOLDERS: ['CDD', 'EDD', 'FD', 'HR', 'PD', 'PW']
+     SUBFOLDERS: ['CDD', 'EDD', 'FD', 'HR', 'PD', 'PW', 'OVP']
    ```
 
 ## Configuration
