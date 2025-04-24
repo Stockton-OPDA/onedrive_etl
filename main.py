@@ -4,7 +4,6 @@ import time
 import multiprocessing
 from messaging.producer import run_producer
 from messaging.consumer import run_consumer
-import pika
 
 # Set up logging and config
 cfg = load_config()
@@ -25,16 +24,13 @@ if __name__ == "__main__":
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
-            print("Stopping processes...")
             logger.info("Stopping processes...")
             watcher_process.terminate()
             consumer_process.terminate()
 
             watcher_process.join()
             consumer_process.join()
-            print("Processes stopped.")
             logger.info("Processes stopped.")
 
     except Exception as e:
-        print(f"An error occurred in main.py: {e}")
         logger.error(f"An error occurred in main.py: {e}", exc_info=True)

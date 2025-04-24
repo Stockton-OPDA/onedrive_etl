@@ -1,8 +1,17 @@
-# RabbitMQ Producer and Consumer Service
+# OneDrive - SQL File Synchronization Service
 
-This project automates FireSTAT data pushing to the OPDA on-premise SQL server for use in PowerBI / STAT. 
+This project automates data synchronization between various departmental OneDrive folders to the OPDA on-premise SQL server for use in PowerBI / STAT. 
 
-This project uses a RabbitMQ-based messaging system consisting of a producer and a consumer. The producer monitors file creation or modification events in a specified directory, while the consumer processes the messages sent to the RabbitMQ queue.
+This project uses a RabbitMQ-based messaging system consisting of a producer and a consumer. The producer monitors file creation or modification events for subfolders within a specified directory, while the consumer processes the messages sent to the RabbitMQ queue.
+
+Currently, the following departments are monitored:
+  - CDD
+  - EDD
+  - FD
+  - HR
+  - PD
+  - PW
+  - OVP
 
 ## Features
 
@@ -25,15 +34,15 @@ This project uses a RabbitMQ-based messaging system consisting of a producer and
 1. **Clone the repository:**
 
    ```
-   git clone https://github.com/your-repo/rabbitmq-service.git
+   git clone https://github.com/Stockton-OPDA/onedrive_etl.git
    cd rabbitmq-service
    ```
 
 2. **Set up a virtual environment:**
 
    ```
-   python -m venv venv
-   source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows, use `.venv\Scripts\activate`
    ```
 
 3. **Install dependencies:**
@@ -44,7 +53,22 @@ This project uses a RabbitMQ-based messaging system consisting of a producer and
 
 4. **Configure RabbitMQ credentials:**
    
-   Update the `config.yaml` file in the `config` folder with your RabbitMQ server details.
+   Update the `config.yaml` file in the `config` folder with your own credentials:
+   ```
+   creds:
+     SQL_SERVER: '<SQL_SERVER_HOSTNAME>'
+     DATABASE: '<DATABASE_NAME>'
+     USERNAME_SQL: '<SQL_USERNAME>'
+     PASSWORD_SQL: '<SQL_PASSWORD>'
+   RABBITMQ_SETTINGS:
+     host: '<RABBITMQ_HOST>'
+     port: <RABBITMQ_PORT>
+     username: '<RABBITMQ_USERNAME>'
+     password: '<RABBITMQ_PASSWORD>'
+   ONEDRIVE:
+     PATH: '<ONEDRIVE_PATH>'
+     SUBFOLDERS: ['CDD', 'EDD', 'FD', 'HR', 'PD', 'PW', 'OVP']
+   ```
 
 ## Configuration
 
@@ -79,6 +103,8 @@ This will:
 
 - Start the producer process to monitor the specified directory.
 - Start the consumer process to listen for and process messages from RabbitMQ.
+
+Alternatively, you can run the program from the included `run.bat` file.
 
 ### Stopping the Services
 
@@ -117,4 +143,4 @@ Press `Ctrl+C` to gracefully stop both the producer and consumer processes.
 
 ## Logging
 
-Logs are stored in the `/logs` directory as specified in the `config.yaml` file. The logging configuration can be customized in `config/config_logging.py`.
+Logs are stored in the `/logs` directory as specified in the `config.yaml` file. The logging configuration can be customized in `config/config_logging.py`. The logs are rotated daily at midnight.

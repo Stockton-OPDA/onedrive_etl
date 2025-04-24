@@ -3,7 +3,7 @@ import sqlalchemy
 import logging
 import urllib
 from sqlalchemy.engine.base import Engine
-from sqlalchemy import Integer, String, Float, DateTime
+from sqlalchemy import Integer, String, Float, DateTime, text
 from sqlalchemy.types import Integer, String, Float, DateTime
 
 logger = logging.getLogger(__name__)
@@ -80,41 +80,35 @@ def infer_sql_dtype(column_name: str, dtype: str):
 
 def upload_dataframe_to_sql(df: pd.DataFrame, table_name: str, engine: Engine, schema: str) -> None:
     """
-    Uploads a DataFrame to a SQL database table. If the table already exists, it is dropped and re-created with the DataFrame data.
+    Uploads a DataFrame to a SQL Server database table. If the table already exists, it is dropped and re-created with the DataFrame data.
+    Creates the schema if it does not exist.
 
     Args:
         df (pandas.DataFrame): The DataFrame to be uploaded.
         table_name (str): The name of the table in the SQL database.
         engine (sqlalchemy.engine.base.Engine): The SQLAlchemy engine connected to the database.
         schema (str): The name of the schema in the SQL database.
-
-    Raises:
-        Exception: Errors in uploading the DataFrame to the SQL database.
-
-    Returns:
-        None
-
-    Notes:
-        - If the table already exists, it is dropped before creating a new table with the DataFrame data.
     """
     if df.empty:
         logger.warning(f"The DataFrame for table {table_name} is empty. Skipping upload.")
         return
+
     try:
         with engine.connect() as conn:
-            trans = conn.begin()
-            try:
-                # # Generate the dtype mapping dynamically based on DataFrame columns
-                # dtype_mapping = {col: infer_sql_dtype(col, str(df[col].dtype)) for col in df.columns}
+            with conn.begin():
+                check_schema_exists = text(f"""
+                    SELECT 1 FROM sys.schemas WHERE name = :schema
+                """)
+                result = conn.execute(check_schema_exists, {'schema': schema}).scalar()
 
-                # Write the DataFrame to the SQL database table, replace the existing table if it exists
+                if not result:
+                    create_schema = text(f"EXEC('CREATE SCHEMA {schema}')")
+                    conn.execute(create_schema)
+                    logger.info(f"New schema '{schema}' created.")
+
+                # Upload DataFrame
                 df.to_sql(table_name, conn, if_exists='replace', index=False, schema=schema)
                 logger.info(f"Table {schema}.{table_name} created and data uploaded.")
-                trans.commit()
-            except Exception as proc_error:
-                trans.rollback()
-                logger.error(f"An error occurred during transaction: {proc_error}")
-                raise
 
     except Exception as e:
-        logger.error(f'Error in upload_dataframe_to_sql with {schema}.{table_name}: {e}')
+        logger.error(f"Error in upload_dataframe_to_sql with {schema}.{table_name}: {e}")
