@@ -1,7 +1,7 @@
 from helpers.sql_helpers import upload_dataframe_to_sql
-import logging
+from config.config_logging import setup_logging
 
-logger = logging.getLogger(__name__)
+logger = setup_logging()
 
 def load_data(df, tablename, engine, schema):
     """

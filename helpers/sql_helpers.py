@@ -1,12 +1,12 @@
 import pandas as pd
 import sqlalchemy
-import logging
 import urllib
 from sqlalchemy.engine.base import Engine
 from sqlalchemy import Integer, String, Float, DateTime, text
 from sqlalchemy.types import Integer, String, Float, DateTime
+from config.config_logging import setup_logging
 
-logger = logging.getLogger(__name__)
+logger = setup_logging()
 
 def connect_db(DRIVER: str, SERVER: str, DATABASE: str, USERNAME: str, PASSWORD: str) -> Engine:
     """

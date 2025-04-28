@@ -3,10 +3,10 @@ import json
 from etl.run_etl import run_etl
 from config.config import load_config
 from messaging.rabbitmq_connector import connect_to_broker
-import logging
 import time
+from config.config_logging import setup_logging
 
-logger = logging.getLogger(__name__)
+logger = setup_logging()
 cfg = load_config()
 
 QUEUE_NAME = 'file_events'

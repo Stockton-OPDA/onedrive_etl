@@ -3,14 +3,14 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from helpers.sql_helpers import connect_db
 from config.config import load_config
-import logging
 import os
 import pika
 import json
 from datetime import datetime
 from messaging.rabbitmq_connector import connect_to_broker
+from config.config_logging import setup_logging
 
-logger = logging.getLogger(__name__)
+logger = setup_logging()
 cfg = load_config()
 
 QUEUE_NAME = 'file_events'

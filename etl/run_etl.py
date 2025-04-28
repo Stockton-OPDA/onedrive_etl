@@ -1,12 +1,12 @@
 from etl.extract import extract_data
 from etl.transform import transform_data
 from etl.load import load_data
-import logging
 from helpers.sql_helpers import connect_db
 from config.config import load_config
 from pathlib import Path
+from config.config_logging import setup_logging
 
-logger = logging.getLogger(__name__)
+logger = setup_logging()
 cfg = load_config()
 
 SQL_SERVER = cfg.creds.SQL_SERVER
