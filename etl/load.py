@@ -1,7 +1,7 @@
 from helpers.sql_helpers import upload_dataframe_to_sql
-import logging
+from config.config_logging import setup_logging
 
-logger = logging.getLogger(__name__)
+logger = setup_logging()
 
 def load_data(df, tablename, engine, schema):
     """
@@ -20,7 +20,10 @@ def load_data(df, tablename, engine, schema):
         - If the table already exists, it is replaced with the new data.
     """
     try:
-        upload_dataframe_to_sql(df, tablename, engine, schema)
+        append_or_replace = 'replace'
+        if tablename == 'Separated_Employees_Within_30_Days':
+            append_or_replace = 'append'
+        upload_dataframe_to_sql(df, tablename, engine, schema, append_or_replace)
         logger.info(f"Data uploaded to SQL table: {tablename}")
     except Exception as e:
         logger.error(f"Error in upload_dataframe_to_sql with {tablename}: {e}", exc_info=True)

@@ -2,9 +2,9 @@ import pika
 import pika.exceptions
 from config.config import load_config
 import time
-import logging
+from config.config_logging import setup_logging
 
-logger = logging.getLogger(__name__)
+logger = setup_logging()
 
 cfg = load_config()
 
