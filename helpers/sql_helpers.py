@@ -78,7 +78,7 @@ def infer_sql_dtype(column_name: str, dtype: str):
     else:
         return String()
 
-def upload_dataframe_to_sql(df: pd.DataFrame, table_name: str, engine: Engine, schema: str) -> None:
+def upload_dataframe_to_sql(df: pd.DataFrame, table_name: str, engine: Engine, schema: str, append_or_replace: str = 'replace') -> None:
     """
     Uploads a DataFrame to a SQL Server database table. If the table already exists, it is dropped and re-created with the DataFrame data.
     Creates the schema if it does not exist.
@@ -88,6 +88,7 @@ def upload_dataframe_to_sql(df: pd.DataFrame, table_name: str, engine: Engine, s
         table_name (str): The name of the table in the SQL database.
         engine (sqlalchemy.engine.base.Engine): The SQLAlchemy engine connected to the database.
         schema (str): The name of the schema in the SQL database.
+        append_or_replace (str, optional): The action to take when the table already exists. Defaults to 'replace'.
     """
     if df.empty:
         logger.warning(f"The DataFrame for table {table_name} is empty. Skipping upload.")
@@ -107,7 +108,7 @@ def upload_dataframe_to_sql(df: pd.DataFrame, table_name: str, engine: Engine, s
                     logger.info(f"New schema '{schema}' created.")
 
                 # Upload DataFrame
-                df.to_sql(table_name, conn, if_exists='replace', index=False, schema=schema)
+                df.to_sql(table_name, conn, if_exists=append_or_replace, index=False, schema=schema)
                 logger.info(f"Table {schema}.{table_name} created and data uploaded.")
 
     except Exception as e:
