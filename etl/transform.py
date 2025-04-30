@@ -25,7 +25,8 @@ def transform_data(file, df):
         # Set tablename to be filename
         tablename = file.split('.')[0].replace(' ', '_')
 
-        if tablename == 'Separated_Employees_Within_30_Days':
+        if 'Separated_Employees_Within_30_Days' in tablename: # Account for duplicates
+            tablename = 'Employee_Separations'
             df.columns = df.iloc[2]
             df = df.drop([0, 1, 2]).reset_index(drop=True)
             df = df.dropna(axis=1, how='all')
