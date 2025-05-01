@@ -144,3 +144,9 @@ Press `Ctrl+C` to gracefully stop both the producer and consumer processes.
 ## Logging
 
 Logs are stored in the `/logs` directory as specified in the `config.yaml` file. The logging configuration can be customized in `config/config_logging.py`. The logs are rotated daily at midnight.
+
+
+## License
+As a work of the City of Stockton, this project is in the public domain within the United States.
+
+Additionally, we waive copyright and related rights of the work worldwide through the [CC0 1.0 Universal public domain dedication](https://creativecommons.org/publicdomain/zero/1.0/deed.en).
